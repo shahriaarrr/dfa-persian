@@ -1,42 +1,24 @@
 <div dir="rlt">
   
-# User Authentication
+# احراز هویت کاربر
   
   
-In the previous chapter we updated our APIs permissions, which is also called **authorization**. In
-this chapter we will implement **authentication** which is the process by which a user can register
-for a new account, log in with it, and log out.
-Within a traditional, monolithic Django website authentication is simpler and involves a sessionbased cookie pattern which we will review below.
-But with an API things are a bit trickier.
-Remember that HTTP is a **stateless protocol** so there is no built-in way to remember if a user is
-authenticated from one request to the next. Each time a user requests a restricted resource it
-must verify itself.
+در فصل قبلی ما دسترسی ای پی آی های مان را آپدیت کردیم ، که به ان مجوز گویند . در این فصل  ، ما احراز هویت را پیاده سازی  می‌کنیم فرایندی که کاربر  می‌تواند یک حساب جدید ایجاد کند ، به آن حساب وارد شود و از آن حساب خارج شود .  احراز هویت در یک وب سایت جنگو یکپارچه ساده است و متاثر از یک الگوی کوکی مبتنی بر جلسه است ، که پایین تر آن را مورد بررسی قرار خواهیم داد .اما با وجود یک ای پی آی ، کارها کمی سخت تر می شود . به یاد داشته باشید که Http یک  پروتکل بدون حفظ حالت  است پس هیچ راهی برای به خاطر سپاری وجود ندارد که یک کاربر از یک درخواست به درخواست بعدی احراز هویت شده یا خیر .هر بار که یک  کاربر درخواست یک منبع محدود شده را میدهد در نتیجه باید آن مورد تایید واقع شود. 
   
-The solution is to pass along a unique identifier with each HTTP request. Confusingly, there
-is no universally agreed-upon approach for the form of this identifier and it can take multiple
-forms. Django REST Framework ships with
-[four different built-in authentication options](https://www.django-rest-framework.org/api-guide/authentication/#api-reference): basic,
-session, token, and default. And there are many more third-party packages that offer additional
-features like JSON Web Tokens (JWTs).
-  
-In this chapter we will thoroughly explore how API authentication works, review the pros and
-cons of each approach, and then make an informed choice for our Blog API. By the end, we will
-have created API endpoints for sign up, log in, and log out.
+راه حل ، ارسال یک نشان یکتا همراه هر درخواست می باشد   .  به صورت گیج کننده ای ،یک دیدگاه  توافق شده جهانی برای این نشان یکتا تعریف نشده است  و آن می تواند چندین فرم داشته باشد .  جنگو رست با [چهار نوع آپشن مختلف احراز هویت شکل دهی می شود](https://www.django-rest-framework.org/api-guide/authentication/#api-reference) :  پایه ، جلسه ، تو که ، و پیش فرض .پکیج های ثانویه زیادی وجود دارند که  فیچر های  اضافه مانند  جیسون وب تو کن  ارائه می دهند.
+  در این فصل   بررسی می‌کنیم که یکی پی آی احراز هویت چگونه کار میکند ، و سپس یک انتخاب آگاهانه برای وبلاگ خود انجام می دهیم و ای پی آی هایی برای ایجاد حساب ، ورود به حساب و  خروج از حساب پیاده سازی می کنیم 
 
-### Basic Authentication
+### احراز هویت پایه
 
-The most common form of HTTP authentication is known as [“Basic” Authentication](https://tools.ietf.org/html/rfc7617). When a
-client makes an HTTP request, it is forced to send an approved authentication credential before
-access is granted.
+رایج ترین فرم احراز هویت Http به عنوان [احرازهویت ”پایه“](https://datatracker.ietf.org/doc/html/rfc7617) شناخته می‌شود. زمانی که یک کاربر درخواست http ارسال می کند،  قبل از اعطای دسترسی ،  مجبور به ارسال یک  گواهی احراز هویت تایید شده است.  
   
-The complete request/response flow looks like this:
+پروسه کامل درخواست/ پاسخ به صورت زیر است
   
 
-- 1 Client makes an HTTP request
-- 2 Server responds with an HTTP response containing a 401 (Unauthorized) status code and
-WWW-Authenticate HTTP header with details on how to authorize
-- 3 Client sends credentials back via the [Authorization](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Authorization) HTTP header
-- 4 Server checks credentials and responds with either 200 OK or 403 Forbidden status code
+-  1 . کاربر یک درخواست http ارسال می کند
+-  2 . سرور یک پاسخ با استاتوس ۴۰۱ و یک هدر  WWW-Authenticate HTTP با جزئیات چگونگی دسترسی ارسال می کند  
+-  3 . کاربر گواهی خود را از طریق یک هدر [Authorization](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Authorization) HTTP ارسال می کند    
+-  4 . سرور گواهی را چک میکند و پاسخ را همراه کد ۲۰۰ یا ۴۰۳ به سمت کاربر ارسال می کند یک بار که کاربر تایید شد ، می تواند تمام درخواست های بعدی خود را با هدر Authorization HTTP  ارسال کند.  
 
   
 Once approved, the client sends all future requests with the Authorization HTTP header
